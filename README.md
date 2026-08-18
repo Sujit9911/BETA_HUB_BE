@@ -77,27 +77,6 @@ Spring Boot
 ---
 
 
-## 🔐 Authentication Flow
-
-**Registration** — `POST /api/v1/auth/register`
-
-The backend:
-1. Validates registration data
-2. Checks whether the email already exists
-3. Hashes the password using BCrypt
-4. Creates the user
-5. Assigns the default role
-6. Generates a JWT
-7. Returns authentication information
-
-**Login** — `POST /api/v1/auth/login`
-
-The backend authenticates the credentials and returns a JWT. The frontend then sends the token with protected requests:
-```
-Authorization: Bearer <token>
-```
-
----
 
 ## 🚀 Getting Started
 
