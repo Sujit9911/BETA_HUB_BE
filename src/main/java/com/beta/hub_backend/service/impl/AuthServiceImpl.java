@@ -9,12 +9,10 @@ import com.beta.hub_backend.repo.UserRepository;
 import com.beta.hub_backend.security.CustomUserDetailsService;
 import com.beta.hub_backend.security.JwtUtil;
 import com.beta.hub_backend.service.AuthService;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -40,7 +38,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = new User();
-
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -51,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        UserDetails userDetails =
+        var userDetails =
                 customUserDetailsService.loadUserByUsername(user.getEmail());
 
         String token = jwtUtil.generateToken(userDetails);
@@ -67,23 +64,30 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-
-        User user =
-                userRepository.findByEmail(request.getEmail())
-                        .orElseThrow(() ->
-                                new RuntimeException("User not found")
-                        );
-
-        UserDetails userDetails =
-                customUserDetailsService.loadUserByUsername(
-                        user.getEmail()
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Account not found. Please register first."
+                        )
                 );
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Incorrect password. Please try again."
+            );
+        }
+
+        var userDetails =
+                customUserDetailsService.loadUserByUsername(user.getEmail());
 
         String token = jwtUtil.generateToken(userDetails);
 
